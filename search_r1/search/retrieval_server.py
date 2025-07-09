@@ -415,7 +415,7 @@ if __name__ == "__main__":
         retrieval_topk=args.topk,
         faiss_gpu=args.faiss_gpu,
         gpu_ids=args.gpu_ids,  # 传递 GPU ID
-        gpu_memory_limit=args.gpu_memory_limit,  # 传递显存限制
+        gpu_memory_limit_per_gpu=args.gpu_memory_limit_per_gpu,  # 传递显存限制
 
         retrieval_model_path=args.retriever_model,
         retrieval_pooling_method="mean",
