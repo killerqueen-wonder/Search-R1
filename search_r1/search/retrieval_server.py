@@ -432,4 +432,4 @@ if __name__ == "__main__":
     import torch.cuda as cuda
     print(f"GPU {str(config.gpu_ids)} 显存使用量 (服务启动后): {cuda.memory_allocated() / 1e9:.2f} GB / {cuda.max_memory_allocated() / 1e9:.2f} GB")
     # 3) Launch the server. By default, it listens on http://127.0.0.1:8000
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8006)
