@@ -414,7 +414,7 @@ if __name__ == "__main__":
         corpus_path=args.corpus_path,
         retrieval_topk=args.topk,
         faiss_gpu=args.faiss_gpu,
-        gpu_id=args.gpu_id,  # 传递 GPU ID
+        gpu_ids=args.gpu_ids,  # 传递 GPU ID
         gpu_memory_limit=args.gpu_memory_limit,  # 传递显存限制
 
         retrieval_model_path=args.retriever_model,
