@@ -209,10 +209,19 @@ class DenseRetriever(BaseRetriever):
         super().__init__(config)
         self.index = faiss.read_index(self.index_path)
         if config.faiss_gpu:
+            '''
             co = faiss.GpuMultipleClonerOptions()
             co.useFloat16 = True
             co.shard = True
-            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)'''
+            # 创建 GPU 资源管理器并设置显存限制
+            res = faiss.StandardGpuResources()
+            res.setTempMemory(config.gpu_memory_limit * 1024 * 1024 * 1024)  # 单位：字节
+            res.noTempMemory()  # 禁用临时内存分配
+
+            # 指定使用某个 GPU（如 config.gpu_id）
+            self.index = faiss.index_cpu_to_gpu(res, config.gpu_id, self.index)
+
 
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(
@@ -295,6 +304,8 @@ class Config:
         dataset_path: str = "./data",
         data_split: str = "train",
         faiss_gpu: bool = True,
+        gpu_id: int =0, #新增指定GPU
+        gpu_memory_limit:int =4,#新增内存限制
         retrieval_model_path: str = "./model",
         retrieval_pooling_method: str = "mean",
         retrieval_query_max_length: int = 256,
@@ -308,6 +319,9 @@ class Config:
         self.dataset_path = dataset_path
         self.data_split = data_split
         self.faiss_gpu = faiss_gpu
+        self.gpu_id=gpu_id
+        self.gpu_memory_limit=gpu_memory_limit
+
         self.retrieval_model_path = retrieval_model_path
         self.retrieval_pooling_method = retrieval_pooling_method
         self.retrieval_query_max_length = retrieval_query_max_length
@@ -367,6 +381,9 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
+    parser.add_argument("--gpu_id", type=int, default=0, help="GPU device ID to use.")
+    parser.add_argument("--gpu_memory_limit", type=int, default=20, help="GPU memory limit in GB.")
+
 
     args = parser.parse_args()
     
@@ -378,6 +395,9 @@ if __name__ == "__main__":
         corpus_path=args.corpus_path,
         retrieval_topk=args.topk,
         faiss_gpu=args.faiss_gpu,
+        gpu_id=args.gpu_id,  # 传递 GPU ID
+        gpu_memory_limit=args.gpu_memory_limit,  # 传递显存限制
+
         retrieval_model_path=args.retriever_model,
         retrieval_pooling_method="mean",
         retrieval_query_max_length=256,
