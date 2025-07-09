@@ -214,14 +214,29 @@ class DenseRetriever(BaseRetriever):
             co.useFloat16 = True
             co.shard = True
             self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)'''
-            # 创建 GPU 资源管理器并设置显存限制
-            res = faiss.StandardGpuResources()
-            res.setTempMemory(config.gpu_memory_limit * 1024 * 1024 * 1024)  # 单位：字节
-            res.noTempMemory()  # 禁用临时内存分配
+            # # 创建 GPU 资源管理器并设置显存限制
+            # res = faiss.StandardGpuResources()
+            # res.setTempMemory(config.gpu_memory_limit * 1024 * 1024 * 1024)  # 单位：字节
+            # res.noTempMemory()  # 禁用临时内存分配
 
-            # 指定使用某个 GPU（如 config.gpu_id）
-            self.index = faiss.index_cpu_to_gpu(res, config.gpu_id, self.index)
+            # # 指定使用某个 GPU（如 config.gpu_id）
+            # self.index = faiss.index_cpu_to_gpu(res, config.gpu_id, self.index)
+            # 创建 GPU 资源管理器并设置每个 GPU 的显存限制
+            res_list = []
+            for gpu_id in config.gpu_ids:
+                res = faiss.StandardGpuResources()
+                res.setTempMemory(config.gpu_memory_limit_per_gpu * 1024 * 1024 * 1024)  # 单位：字节
+                res.noTempMemory()  # 禁用临时内存分配
+                res_list.append(res)
 
+            # 启用显存优化策略（分片、混合精度）
+            co = faiss.GpuMultipleClonerOptions()
+            co.useFloat16 = True      # 使用混合精度（降低显存占用）
+            co.shard = True            # 分片到多个 GPU
+            co.copyInvertedListsOnGpu = True  # 将倒排列表复制到 GPU
+
+            # 将索引迁移到多个 GPU
+            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co, gpus=config.gpu_ids)
 
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(
@@ -304,8 +319,9 @@ class Config:
         dataset_path: str = "./data",
         data_split: str = "train",
         faiss_gpu: bool = True,
-        gpu_id: int =0, #新增指定GPU
-        gpu_memory_limit:int =4,#新增内存限制
+        # gpu_id: int =0, #新增指定GPU
+        gpu_ids: List[int] = [3, 4, 5, 7],  # 新增 GPU ID 列表
+        gpu_memory_limit_per_gpu:int =18,#新增内存限制
         retrieval_model_path: str = "./model",
         retrieval_pooling_method: str = "mean",
         retrieval_query_max_length: int = 256,
@@ -319,8 +335,9 @@ class Config:
         self.dataset_path = dataset_path
         self.data_split = data_split
         self.faiss_gpu = faiss_gpu
-        self.gpu_id=gpu_id
-        self.gpu_memory_limit=gpu_memory_limit
+
+        self.gpu_ids=gpu_ids
+        self.gpu_memory_limit_per_gpu=gpu_memory_limit_per_gpu
 
         self.retrieval_model_path = retrieval_model_path
         self.retrieval_pooling_method = retrieval_pooling_method
@@ -381,8 +398,10 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
-    parser.add_argument("--gpu_id", type=int, default=0, help="GPU device ID to use.")
-    parser.add_argument("--gpu_memory_limit", type=int, default=20, help="GPU memory limit in GB.")
+    # parser.add_argument("--gpu_id", type=int, default=0, help="GPU device ID to use.")
+    # parser.add_argument("--gpu_memory_limit", type=int, default=20, help="GPU memory limit in GB.")
+    parser.add_argument("--gpu_ids", type=int, nargs='+', default=[3, 4, 5, 7], help="GPU device IDs to use.")
+    parser.add_argument("--gpu_memory_limit_per_gpu", type=int, default=18, help="GPU memory limit per GPU in GB.")
 
 
     args = parser.parse_args()
