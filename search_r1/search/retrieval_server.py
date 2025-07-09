@@ -213,7 +213,8 @@ class DenseRetriever(BaseRetriever):
             co = faiss.GpuMultipleClonerOptions()
             co.useFloat16 = True
             co.shard = True
-            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)'''
+            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            '''
             # # 创建 GPU 资源管理器并设置显存限制
             # res = faiss.StandardGpuResources()
             # res.setTempMemory(config.gpu_memory_limit * 1024 * 1024 * 1024)  # 单位：字节
@@ -236,7 +237,8 @@ class DenseRetriever(BaseRetriever):
             co.copyInvertedListsOnGpu = True  # 将倒排列表复制到 GPU
 
             # 将索引迁移到多个 GPU
-            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co, gpus=config.gpu_ids)
+            # self.index = faiss.index_cpu_to_all_gpus(self.index, co=co, gpus=config.gpu_ids)
+            self.index = faiss.index_cpu_to_gpu_multiple_py(res_list, self.index, co=co, gpus=config.gpu_ids)
 
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(
@@ -426,6 +428,8 @@ if __name__ == "__main__":
 
     # 2) Instantiate a global retriever so it is loaded once and reused.
     retriever = get_retriever(config)
-    
+    # 插入全局显存监控
+    import torch.cuda as cuda
+    print(f"GPU {str(config.gpu_ids)} 显存使用量 (服务启动后): {cuda.memory_allocated() / 1e9:.2f} GB / {cuda.max_memory_allocated() / 1e9:.2f} GB")
     # 3) Launch the server. By default, it listens on http://127.0.0.1:8000
     uvicorn.run(app, host="0.0.0.0", port=8000)
