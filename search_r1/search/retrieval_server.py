@@ -215,18 +215,15 @@ class DenseRetriever(BaseRetriever):
             co.shard = True
             self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
             '''
-            # # 创建 GPU 资源管理器并设置显存限制
-            # res = faiss.StandardGpuResources()
-            # res.setTempMemory(config.gpu_memory_limit * 1024 * 1024 * 1024)  # 单位：字节
-            # res.noTempMemory()  # 禁用临时内存分配
 
-            # # 指定使用某个 GPU（如 config.gpu_id）
-            # self.index = faiss.index_cpu_to_gpu(res, config.gpu_id, self.index)
             # 创建 GPU 资源管理器并设置每个 GPU 的显存限制
             res_list = []
-            for gpu_id in config.gpu_ids:
+            #允许列表形式的内存限制
+            if not isinstance(config.gpu_memory_limit_per_gpu, list):  # 使用 isinstance 检查是否为列表
+                config.gpu_memory_limit_per_gpu = [config.gpu_memory_limit_per_gpu] * len(config.gpu_ids)  # 通过列表乘法生成重复元素列表 
+            for gpu_id,mem_lim in zip(config.gpu_ids,config.gpu_memory_limit_per_gpu):
                 res = faiss.StandardGpuResources()
-                res.setTempMemory(config.gpu_memory_limit_per_gpu * 1024 * 1024 * 1024)  # 单位：字节
+                res.setTempMemory(mem_lim * 1024 * 1024 * 1024)  # 单位：字节
                 res.noTempMemory()  # 禁用临时内存分配
                 res_list.append(res)
 
