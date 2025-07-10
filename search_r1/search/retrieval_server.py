@@ -232,11 +232,11 @@ class DenseRetriever(BaseRetriever):
             co.useFloat16 = True      # 使用混合精度（降低显存占用）
             co.shard = True            # 分片到多个 GPU
             co.copyInvertedListsOnGpu = True  # 将倒排列表复制到 GPU
-
+            print(f'使用GPU{config.gpu_ids},内存限制为{config.gpu_memory_limit_per_gpu}')
             # 将索引迁移到多个 GPU
             # self.index = faiss.index_cpu_to_all_gpus(self.index, co=co, gpus=config.gpu_ids)
             self.index = faiss.index_cpu_to_gpu_multiple_py(res_list, self.index, co=co, gpus=config.gpu_ids)
-
+            
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(
             model_name = self.retrieval_method,
