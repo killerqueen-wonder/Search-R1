@@ -318,9 +318,9 @@ class Config:
         dataset_path: str = "./data",
         data_split: str = "train",
         faiss_gpu: bool = True,
-        # gpu_id: int =0, #新增指定GPU
+        
         gpu_ids: List[int] = [3, 4, 5, 7],  # 新增 GPU ID 列表
-        gpu_memory_limit_per_gpu:int =18,#新增内存限制
+        gpu_memory_limit_per_gpu =18,#新增内存限制
         retrieval_model_path: str = "./model",
         retrieval_pooling_method: str = "mean",
         retrieval_query_max_length: int = 256,
@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # parser.add_argument("--gpu_id", type=int, default=0, help="GPU device ID to use.")
     # parser.add_argument("--gpu_memory_limit", type=int, default=20, help="GPU memory limit in GB.")
     parser.add_argument("--gpu_ids", type=int, nargs='+', default=[3, 4, 5, 7], help="GPU device IDs to use.")
-    parser.add_argument("--gpu_memory_limit_per_gpu", type=int, default=18, help="GPU memory limit per GPU in GB.")
+    parser.add_argument("--gpu_memory_limit_per_gpu", type=int, nargs='+', default=18, help="GPU memory limit per GPU in GB.")
 
 
     args = parser.parse_args()
