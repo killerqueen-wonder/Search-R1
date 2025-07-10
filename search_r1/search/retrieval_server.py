@@ -219,8 +219,8 @@ class DenseRetriever(BaseRetriever):
             # 创建 GPU 资源管理器并设置每个 GPU 的显存限制
             res_list = []
             #允许列表形式的内存限制
-            if not isinstance(config.gpu_memory_limit_per_gpu, list):  # 使用 isinstance 检查是否为列表
-                config.gpu_memory_limit_per_gpu = [config.gpu_memory_limit_per_gpu] * len(config.gpu_ids)  # 通过列表乘法生成重复元素列表 
+            if len(config.gpu_memory_limit_per_gpu)==1:  
+                config.gpu_memory_limit_per_gpu = config.gpu_memory_limit_per_gpu * len(config.gpu_ids)  
             for gpu_id,mem_lim in zip(config.gpu_ids,config.gpu_memory_limit_per_gpu):
                 res = faiss.StandardGpuResources()
                 res.setTempMemory(mem_lim * 1024 * 1024 * 1024)  # 单位：字节
@@ -397,10 +397,9 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
-    # parser.add_argument("--gpu_id", type=int, default=0, help="GPU device ID to use.")
-    # parser.add_argument("--gpu_memory_limit", type=int, default=20, help="GPU memory limit in GB.")
+
     parser.add_argument("--gpu_ids", type=int, nargs='+', default=[3, 4, 5, 7], help="GPU device IDs to use.")
-    parser.add_argument("--gpu_memory_limit_per_gpu", type=int, nargs='+', default=18, help="GPU memory limit per GPU in GB.")
+    parser.add_argument("--gpu_memory_limit_per_gpu", type=int, nargs='+', default=[18], help="GPU memory limit per GPU in GB.")
 
 
     args = parser.parse_args()
