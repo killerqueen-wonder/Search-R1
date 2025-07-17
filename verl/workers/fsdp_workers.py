@@ -692,7 +692,9 @@ class CriticWorker(Worker):
             offload_fsdp_param_and_grad(module=self.critic_module, offload_grad=self._is_offload_grad)
         if self._is_offload_optimizer:
             offload_fsdp_optimizer(optimizer=self.critic_optimizer)
-
+        print(f'[debug in fsdp workers]self.config.critic.ppo_mini_batch_size={self.config.critic.ppo_mini_batch_size},self.config.critic.ppo_micro_batch_size={self.config.critic.ppo_micro_batch_size}')
+        print(f'[debug]self.config.ppo_mini_batch_size={self.config.ppo_mini_batch_size},self.config.ppo_micro_batch_size={self.config.ppo_micro_batch_size}')
+        
         self.critic = DataParallelPPOCritic(config=self.config,
                                             critic_module=self.critic_module,
                                             critic_optimizer=self.critic_optimizer)
