@@ -563,6 +563,8 @@ class CriticWorker(Worker):
         self._is_offload_optimizer = self.config.model.fsdp_config.optimizer_offload
 
         # normalize config
+        print(f'[debug in fsdp workers before normalization]self.config.ppo_mini_batch_size={self.config.ppo_mini_batch_size},self.config.ppo_micro_batch_size={self.config.ppo_micro_batch_size}')
+
         self.config.ppo_mini_batch_size //= (torch.distributed.get_world_size() // self.ulysses_sequence_parallel_size)
         self.config.ppo_micro_batch_size //= (torch.distributed.get_world_size() // self.ulysses_sequence_parallel_size)
         self.config.forward_micro_batch_size //= (torch.distributed.get_world_size() //
@@ -694,7 +696,7 @@ class CriticWorker(Worker):
             offload_fsdp_optimizer(optimizer=self.critic_optimizer)
         # print(f'[debug in fsdp workers]self.config.critic.ppo_mini_batch_size={self.config.critic.ppo_mini_batch_size},self.config.critic.ppo_micro_batch_size={self.config.critic.ppo_micro_batch_size}')
         print(f'[debug in fsdp workers]self.config.ppo_mini_batch_size={self.config.ppo_mini_batch_size},self.config.ppo_micro_batch_size={self.config.ppo_micro_batch_size}')
-        print(f'[debug in fsdp workers]self.config:{self.config}')
+        # print(f'[debug in fsdp workers]self.config:{self.config}')
         self.critic = DataParallelPPOCritic(config=self.config,
                                             critic_module=self.critic_module,
                                             critic_optimizer=self.critic_optimizer)
