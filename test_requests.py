@@ -17,7 +17,7 @@ def verify_and_call_search_service(search_url: str, payload: dict, timeout: floa
     """
     try:
         logger.info(f"Calling search service at {search_url} with payload keys: {list(payload.keys())}")
-        resp = requests.post(search_url, json=payload, timeout=timeout)
+        resp = requests.post(search_url, json=payload, timeout=timeout,proxies={"http": None, "https": None})
     except RequestException as e:
         logger.error(f"Failed to connect to search service: {e}")
         raise
