@@ -21,7 +21,7 @@ from verl.utils.reward_score import qa_em
 from verl.trainer.ppo.ray_trainer import RayPPOTrainer
 import re
 import numpy as np
-
+from datetime import datetime
 def _select_rm_score_fn(data_source):
     if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle']:
         return qa_em.compute_score_em
@@ -205,4 +205,6 @@ def main_task(config):
 
 
 if __name__ == '__main__':
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     main()
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
