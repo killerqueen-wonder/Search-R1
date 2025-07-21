@@ -1,5 +1,5 @@
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-# export CUDA_VISIBLE_DEVICES=0,1,2,4
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5
 export DATA_DIR='data/nq_search'
 
 WAND_PROJECT='Search-R1'
@@ -31,8 +31,8 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     data.val_files=$DATA_DIR/test.parquet \
     data.train_data_num=null \
     data.val_data_num=null \
-    data.train_batch_size=32 \
-    data.val_batch_size=16 \
+    data.train_batch_size=24 \
+    data.val_batch_size=12 \
     data.max_prompt_length=4096 \
     data.max_response_length=500 \
     data.max_start_length=2048 \
@@ -74,7 +74,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     +trainer.val_only=false \
     +trainer.val_before_train=true \
     trainer.default_hdfs_dir=null \
-    trainer.n_gpus_per_node=8 \
+    trainer.n_gpus_per_node=6 \
     trainer.nnodes=1 \
     trainer.save_freq=100 \
     trainer.test_freq=50 \
