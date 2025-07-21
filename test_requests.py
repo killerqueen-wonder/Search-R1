@@ -52,7 +52,11 @@ if __name__ == "__main__":
             "topk": 1,
             "return_scores": True
         }
-        
+    payload =    {
+      "queries": ["What is Python?", "Tell me about neural networks."],
+      "topk": 3,
+      "return_scores": True
+    }
     print(requests.post(test_url, json=payload).json())
     try:
         test_response = verify_and_call_search_service(test_url, test_payload)
