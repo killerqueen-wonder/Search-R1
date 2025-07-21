@@ -205,6 +205,9 @@ def main_task(config):
 
 
 if __name__ == '__main__':
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    main()
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    try:
+        main()
+    except Exception as e:
+        print(f"程序出错: {e}")
+    finally:
+        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
