@@ -46,7 +46,7 @@ def verify_and_call_search_service(search_url: str, payload: dict, timeout: floa
 if __name__ == "__main__":
     # 在训练脚本最开始或验证前做一次连通性检查
     test_url = "http://127.0.0.1:8006/retrieve"
-    test_payload = {"queries": ["example query"], "topk": 3}
+    
     payload = {
             "queries": ["What is Python?"],
             "topk": 1,
@@ -57,9 +57,9 @@ if __name__ == "__main__":
       "topk": 3,
       "return_scores": True
     }
-    print(requests.post(test_url, json=payload).json())
+    # print(requests.post(test_url, json=payload).json())
     try:
-        test_response = verify_and_call_search_service(test_url, test_payload)
+        test_response = verify_and_call_search_service(test_url, payload)
         print("Search service is up! Sample response:", test_response)
     except Exception as err:
         print("Search service verification failed:", err)
