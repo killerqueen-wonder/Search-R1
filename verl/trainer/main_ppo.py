@@ -203,11 +203,21 @@ def main_task(config):
     trainer.init_workers()
     trainer.fit()
 
-
+def time_cul(t1,t2):
+    delta = t2 - t1
+    total_seconds = delta.total_seconds()
+    hours = int(total_seconds // 3600)
+    remaining_seconds = int(total_seconds % 3600)
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
+    print(f"using {hours}h{minutes}min{seconds}sec")
+    
 if __name__ == '__main__':
+    time1 = datetime.now()
     try:
         main()
-    except Exception as e:
-        print(f"程序出错: {e}")
+    # except Exception as e:
+    #     print(f"程序出错: {e}")
     finally:
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        time2 = datetime.now()
+        time_cul(time1,time2)
