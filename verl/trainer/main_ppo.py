@@ -210,7 +210,8 @@ def time_cul(t1,t2):
     remaining_seconds = int(total_seconds % 3600)
     minutes = remaining_seconds // 60
     seconds = remaining_seconds % 60
-    print(f"total time: {hours}h {minutes}min {seconds}sec")
+    print(f'start time:{t1} end time:{t2}')
+    print(f"total: {hours}h {minutes}min {seconds}sec")
     
 if __name__ == '__main__':
     time1 = datetime.now()
