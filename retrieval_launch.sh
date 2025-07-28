@@ -1,6 +1,7 @@
 
 file_path=/the/path/you/save/corpus
 file_path=/mnt/nvme1n1/legal_LLM/dataset
+file_path=/share/home/panghuaiwen/legal_LLM/dataset
 index_file=$file_path/e5_Flat.index
 corpus_file=$file_path/wiki-18.jsonl
 retriever_name=e5
