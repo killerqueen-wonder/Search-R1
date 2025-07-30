@@ -1,7 +1,8 @@
 #!/bin/bash
 # 修复后的打包脚本
 
-BACKUP_DIR="${1:-/backup/conda_envs}"
+BACKUP_DIR="${1:-/linzhihang/huaiwenpang/legal_LLM/env_backup}"
+#默认地址
 shift
 ENVIRONMENTS=("$@")
 
