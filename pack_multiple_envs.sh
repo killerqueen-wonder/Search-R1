@@ -10,10 +10,11 @@ ENVIRONMENTS=("$@")
 if [ ${#ENVIRONMENTS[@]} -eq 0 ]; then
     echo "未指定环境，将打包所有非base环境..."
     # 可靠地获取环境列表
-    mapfile -t ENVIRONMENTS < <(conda env list | grep -vE "^#|^$|^\s*$" | awk 'NR>2 && $1 != "base" && $1 != "*" {print $1}' | sort -u)
+    # mapfile -t ENVIRONMENTS < <(conda env list | grep -vE "^#|^$|^\s*$" | awk 'NR>2 && $1 != "base" && $1 != "*" {print $1}' | sort -u)
+    mapfile -t ENVIRONMENTS < <(conda env list | grep -vE "^#|^$|^\s*$" | awk '$1 != "base" && $1 != "*" {print $1}' | sort -u)
     
     # 过滤空行和无效环境
-    ENVIRONMENTS=($(printf '%s\n' "${ENVIRONMENTS[@]}" | grep -v "^$"))
+    # ENVIRONMENTS=($(printf '%s\n' "${ENVIRONMENTS[@]}" | grep -v "^$"))
     
     if [ ${#ENVIRONMENTS[@]} -eq 0 ]; then
         echo "未找到有效的Conda环境！"

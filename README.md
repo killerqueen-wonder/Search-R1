@@ -128,7 +128,8 @@ python scripts/data_process/nq_search.py
 (3) Launch a local retrieval server.
 ```bash
 conda activate retriever
-bash retrieval_launch.sh
+# export file_path=
+bash retrieval_launch.sh #以及GPU参数信息
 ```
 
 (4) Run RL training (PPO) with Llama-3.2-3b-base.
