@@ -77,10 +77,13 @@ cd Search-R1
 pip install -e .
 
 # flash attention 2
-pip3 install flash-attn --no-build-isolation
-pip3 install flash-attn==2.7.4.post1
+# pip3 install flash-attn --no-build-isolation
+pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple flash-attn --no-build-isolation
+# pip3 install flash-attn==2.7.4.post1
 
-pip install wandb
+# pip install wandb
+pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple wandb
+
 ```
 
 ### Retriever environment (optional)
@@ -98,7 +101,7 @@ pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple transformers
 conda install -c pytorch -c nvidia faiss-gpu=1.8.0
 
 ## API function
-pip install uvicorn fastapi
+pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple uvicorn fastapi
 ```
 
 
@@ -109,6 +112,9 @@ Train a reasoning + search LLM on NQ dataset with e5 as the retriever and wikipe
 (1) Download the indexing and corpus.
 ```bash
 save_path=/the/path/to/save
+export HF_ENDPOINT=https://hf-mirror.com
+pip install -U hf-transfer
+export HF_HUB_ENABLE_HF_TRANSFER=1  # Linux系统
 python scripts/download.py --save_path $save_path
 cat $save_path/part_* > $save_path/e5_Flat.index
 gzip -d $save_path/wiki-18.jsonl.gz
