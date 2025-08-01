@@ -128,9 +128,8 @@ def main_task(config):
 
     # instantiate tokenizer
     from verl.utils import hf_tokenizer
-    tokenizer = hf_tokenizer(local_path,
-                             torch_dtype=torch.float16)
-    #增加精度限制？
+    tokenizer = hf_tokenizer(local_path)
+
 
     # define worker classes
     if config.actor_rollout_ref.actor.strategy == 'fsdp':
