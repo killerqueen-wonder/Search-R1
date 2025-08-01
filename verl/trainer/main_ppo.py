@@ -217,8 +217,7 @@ if __name__ == '__main__':
     time1 = datetime.now()
     try:
         main()
-    # except Exception as e:
-    #     print(f"程序出错: {e}")
+
     finally:
         time2 = datetime.now()
         time_cul(time1,time2)
