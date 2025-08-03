@@ -567,7 +567,7 @@ class RayPPOTrainer(object):
         if self.config.algorithm.adv_estimator == 'gae':
             resource_pool = self.resource_pool_manager.get_resource_pool(Role.Critic)
             critic_cls = RayClassWithInitArgs(cls=self.role_worker_mapping[Role.Critic], config=self.config.critic)
-            print(f'[debug in raytrainer]self.config.critic={self.config.critic}')
+            # print(f'[debug in raytrainer]self.config.critic={self.config.critic}')
             self.resource_pool_to_cls[resource_pool]['critic'] = critic_cls
             self.use_critic = True
             
@@ -669,7 +669,7 @@ class RayPPOTrainer(object):
 
         logger = self.logger
         self.global_steps = 0
-        print('[debug in ray_trainer]: start fitting')
+        # print('[debug in ray_trainer]: start fitting')
         # perform validation before training
         # currently, we only support validation using the reward_function.
         if self.val_reward_fn is not None and self.config.trainer.get('val_before_train', True):
