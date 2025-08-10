@@ -243,7 +243,8 @@ class LLMGenerationManager:
             # gen_output = self.actor_rollout_wg.generate_sequences(rollings)
             rollings_active = DataProto.from_dict({
                 k: v[active_mask] for k, v in rollings.batch.items()
-            })            
+            })      
+            #字典推导式，遍历 rollings.batch 中的每个键值对 (k, v)，并使用 active_mask 对值 v 进行索引，只保留当前仍处于活跃状态的样本的数据。这有效地创建了一个只包含活跃样本的子批次。      
             gen_output = self._generate_with_gpu_padding(rollings_active)
 
             meta_info = gen_output.meta_info            

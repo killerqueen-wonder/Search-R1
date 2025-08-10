@@ -621,14 +621,7 @@ class RayPPOTrainer(object):
         self.actor_rollout_wg = all_wg['actor_rollout']
         self.actor_rollout_wg.init_model()
 
-        # import ray
-        # # 获取当前 worker 所属的 GPU ID 列表
-        # gpus = ray.get_gpu_ids()  # 例如 [0,1,2] 或 [3]（表示物理 GPU5）
 
-        # # 将模型和数据移动到指定 GPU
-        # self.model = self.model.to(f'cuda:{gpus[0]}')
-
-        # self.model = torch.nn.DataParallel(self.model, device_ids=[0, 1, 2])  # 使用逻辑 GPU0~2
     def _save_checkpoint(self):
         actor_local_path = os.path.join(self.config.trainer.default_local_dir, 'actor',
                                         f'global_step_{self.global_steps}')
