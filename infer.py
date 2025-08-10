@@ -8,6 +8,7 @@ question = "Mike Barnett negotiated many contracts including which player that w
 
 # Model ID and device setup
 model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
+model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 question = question.strip()
