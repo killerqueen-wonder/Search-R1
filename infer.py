@@ -7,14 +7,15 @@ import requests
 question = "Mike Barnett negotiated many contracts including which player that went on to become general manager of CSKA Moscow of the Kontinental Hockey League?"
 
 # Model ID and device setup
-model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
+# model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
 model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 question = question.strip()
 if question[-1] != '?':
     question += '?'
-curr_eos = [151645, 151643] # for Qwen2.5 series models
+# curr_eos = [151645, 151643] # for Qwen2.5 series models
+curr_eos = [128001]  # for Llama-3.2-3B
 curr_search_template = '\n\n{output_text}<information>{search_results}</information>\n\n'
 
 # Prepare the message
