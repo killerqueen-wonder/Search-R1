@@ -70,7 +70,10 @@ def search(query: str):
         }
     # results = requests.post("http://127.0.0.1:8006/retrieve", json=payload).json()['result']
     try:
-        response = requests.post("http://127.0.0.1:8006/retrieve", json=payload, timeout=10)
+        response = requests.post("http://127.0.0.1:8006/retrieve", 
+                                json=payload,
+                                proxies={},  # 禁用所有代理 
+                                timeout=10)
         response.raise_for_status()
         json_data = response.json()
         results = json_data.get('result', [])
