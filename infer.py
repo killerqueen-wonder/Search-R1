@@ -59,13 +59,36 @@ def get_query(text):
         return None
 
 def search(query: str):
+    if not query or not query.strip():
+        print("[WARNING] Empty query passed to search function.")
+        return ""
+    
     payload = {
             "queries": [query],
             "topk": 3,
             "return_scores": True
         }
-    results = requests.post("http://127.0.0.1:8006/retrieve", json=payload).json()['result']
-                
+    # results = requests.post("http://127.0.0.1:8006/retrieve", json=payload).json()['result']
+    try:
+        response = requests.post("http://127.0.0.1:8006/retrieve", json=payload, timeout=10)
+        response.raise_for_status()
+        json_data = response.json()
+        results = json_data.get('result', [])
+    except requests.exceptions.Timeout:
+        print("[ERROR] Search request timed out.")
+        return ""
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Request failed: {e}")
+        return ""
+    except ValueError as e:
+        print(f"[ERROR] Failed to decode JSON: {e}")
+        print("Response content:", response.text[:500])
+        return ""
+
+    if not results:
+        print("[INFO] No results returned from search.")
+        return ""
+              
     def _passages2string(retrieval_result):
         format_reference = ''
         for idx, doc_item in enumerate(retrieval_result):
