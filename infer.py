@@ -72,7 +72,7 @@ def search(query: str):
     try:
         response = requests.post("http://127.0.0.1:8006/retrieve", 
                                 json=payload,
-                                proxies={},  # 禁用所有代理 
+                                proxies={"http": None, "https": None},  # 禁用所有代理 
                                 timeout=10)
         response.raise_for_status()
         json_data = response.json()
@@ -115,7 +115,7 @@ if tokenizer.chat_template:
     prompt = tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=False)
 
 print('\n\n################# [Start Reasoning + Searching] ##################\n\n')
-print(prompt)
+print(f'[prompt]:{prompt}')
 # Encode the chat-formatted prompt and move it to the correct device
 while True:
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
@@ -140,10 +140,10 @@ while True:
 
     generated_tokens = outputs[0][input_ids.shape[1]:]
     output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-    print(f'[debug] output "{output_text}"...')
+    # print(f'[debug] output "{output_text}"...')
     tmp_query = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
     if tmp_query:
-        print(f'[debug] searching "{tmp_query}"...')
+        # print(f'[debug] searching "{tmp_query}"...')
         search_results = search(tmp_query)
     else:
         search_results = ''
@@ -151,4 +151,4 @@ while True:
     search_text = curr_search_template.format(output_text=output_text, search_results=search_results)
     prompt += search_text
     cnt += 1
-    print(search_text)
+    print(f'[search_text]:{search_text}')
