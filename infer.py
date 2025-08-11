@@ -7,8 +7,8 @@ import requests
 question = "Mike Barnett negotiated many contracts including which player that went on to become general manager of CSKA Moscow of the Kontinental Hockey League?"
 
 # Model ID and device setup
-# model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
-model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
+model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
+# model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 question = question.strip()
@@ -30,10 +30,10 @@ tokenizer = transformers.AutoTokenizer.from_pretrained(model_id)
 model = transformers.AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.bfloat16, device_map="auto")
 
 #use tokenizer's eos and pad token
-eos_token_id=tokenizer.eos_token_id
-pad_token_id=tokenizer.pad_token_id
-curr_eos=[eos_token_id]
-print(f'[debug] eos_token_id={eos_token_id},pad_token_id={pad_token_id}')
+# eos_token_id=tokenizer.eos_token_id
+# pad_token_id=tokenizer.pad_token_id
+# curr_eos=[eos_token_id]
+# print(f'[debug] eos_token_id={eos_token_id},pad_token_id={pad_token_id}')
 
 # Define the custom stopping criterion
 class StopOnSequence(transformers.StoppingCriteria):
