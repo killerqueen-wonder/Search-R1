@@ -127,14 +127,9 @@ while True:
     input_ids = inputs["input_ids"]
     attention_mask = inputs["attention_mask"]
 
-    # 检查是否已经包含 <answer>，如果有，直接退出
-    final_answer = extract_final_answer(full_context)
-    if final_answer is not None:
-        print(f"\n✅ Final Answer detected: <answer> {final_answer} </answer>")
-        break
 
     # 检查是否已包含 </search> 但无新内容？防止无限循环
-    if cnt >= 10:
+    if cnt >= 4:
         print("[ERROR] Too many search iterations. Breaking loop.")
         break
 
@@ -161,18 +156,19 @@ while True:
         print("[WARNING] No new text generated.")
         break
 
+    # 检查是否输出了最终答案
+    final_answer = extract_final_answer(new_text)
+    if final_answer is not None:
+        print(f"\n✅ Final Answer: <answer> {final_answer} </answer>")
+        break
+
     # 将新内容追加到上下文
     full_context += new_text
 
     # 提取最新 query
     query = get_latest_query(full_context)
 
-    # 检查是否输出了最终答案
-    final_answer = extract_final_answer(full_context)
-    if final_answer is not None:
-        print(f"\n✅ Final Answer: <answer> {final_answer} </answer>")
-        break
-
+    
     if query:
         print(f"[INFO] Detected search query: {query}")
         search_results = search(query)
