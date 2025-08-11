@@ -14,8 +14,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 question = question.strip()
 if question[-1] != '?':
     question += '?'
-# curr_eos = [151645, 151643] # for Qwen2.5 series models
-# curr_eos = [128001]  # for Llama-3.2-3B
+curr_eos = [151645, 151643] # for Qwen2.5 series models
+
 curr_search_template = '\n\n{output_text}<information>{search_results}</information>\n\n'
 
 # Prepare the message
@@ -135,8 +135,8 @@ while True:
         attention_mask=attention_mask,
         max_new_tokens=1024,
         stopping_criteria=stopping_criteria,
-        # pad_token_id=tokenizer.eos_token_id,#for qwen2.5
-        pad_token_id=pad_token_id,
+        pad_token_id=tokenizer.eos_token_id,#for qwen2.5
+        # pad_token_id=pad_token_id,
         do_sample=True,
         temperature=0.7
     )
