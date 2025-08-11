@@ -18,7 +18,7 @@ import os
 
 # 示例问题
 question = "Mike Barnett negotiated many contracts including which player that went on to become general manager of CSKA Moscow of the Kontinental Hockey League?"
-
+question = 'who got the first nobel prize in physics?'
 # Model ID and device setup
 model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
