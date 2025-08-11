@@ -32,7 +32,7 @@ model = transformers.AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=
 #use tokenizer's eos and pad token
 eos_token_id=tokenizer.eos_token_id
 pad_token_id=tokenizer.pad_token_id
-curr_eos=eos_token_id
+curr_eos=[eos_token_id]
 print(f'[debug] eos_token_id={eos_token_id},pad_token_id={pad_token_id}')
 
 # Define the custom stopping criterion
@@ -135,7 +135,7 @@ while True:
         attention_mask=attention_mask,
         max_new_tokens=1024,
         stopping_criteria=stopping_criteria,
-        # pad_token_id=tokenizer.eos_token_id,
+        # pad_token_id=tokenizer.eos_token_id,#for qwen2.5
         pad_token_id=pad_token_id,
         do_sample=True,
         temperature=0.7
