@@ -130,6 +130,7 @@ python scripts/data_process/nq_search.py
 conda activate retriever
 # export file_path=
 bash retrieval_launch.sh #以及GPU参数信息
+# bash retrieval_launch.sh --gpu_ids 0 1 2 3  --gpu_memory_limit_per_gpu 24
 ```
 
 (4) Run RL training (PPO) with Llama-3.2-3b-base.
