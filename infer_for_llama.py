@@ -1,16 +1,14 @@
-# search_reasoning_agent.py
+# infer_for_llama.py
 import transformers
 import torch
-import random
+import re
 from datasets import load_dataset
 import requests
-import re
 
-# 示例问题
+# 示例问题（不要修改）
 question = "Mike Barnett negotiated many contracts including which player that went on to become general manager of CSKA Moscow of the Kontinental Hockey League?"
 
 # Model ID and device setup
-# model_id = "PeterJinGo/SearchR1-nq_hotpotqa_train-qwen2.5-7b-em-ppo"
 model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -18,47 +16,46 @@ question = question.strip()
 if question[-1] != '?':
     question += '?'
 
-# 搜索结果模板
 curr_search_template = '\n\n{output_text}<information>{search_results}</information>\n\n'
 
-# Prompt 构造
+# Prepare the message
 prompt = f"""Answer the given question. \
-You must conduct reasoning inside  <think> and </think> first every time you get new information. \
-After reasoning, if you find you lack some knowledge, you can call a search engine by <search> query </search> and it will return the top searched results between <information> and </information>. \
-You can search as many times as you want. \
-If you find no further external knowledge needed, you can directly provide the answer inside <answer> and </answer>, without detailed illustrations. For example, <answer> Beijing </answer>. Question: {question}\n"""
+You must conduct reasoning inside <think> and </think> first every time you get new information. \
+After reasoning, if you lack knowledge, call a search engine via <search> query </search>. \
+It will return results between <information> and </information>. \
+You can search multiple times. \
+If no more knowledge is needed, provide the answer in <answer> content </answer>, e.g., <answer> Beijing </answer>. \
+Question: {question}\n"""
 
-# Initialize the tokenizer and model
+# Initialize tokenizer and model
 tokenizer = transformers.AutoTokenizer.from_pretrained(model_id)
 model = transformers.AutoModelForCausalLM.from_pretrained(
     model_id, torch_dtype=torch.bfloat16, device_map="auto"
 )
 
-# 设置 pad_token（Llama-3 默认没有 pad_token）
+# Set pad_token to eos_token for Llama-3
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
-# 当前模型的 eos_token_id（用于最终判断，但 generate 中禁用）
 eos_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.pad_token_id
-curr_eos = [eos_token_id]  # 用于最终生成结束判断（可选）
-
 print(f'[debug] eos_token_id={eos_token_id}, pad_token_id={pad_token_id}')
 
 
-def get_query(text):
-    """从文本中提取最后一次 <search>...</search> 中的查询"""
-    pattern = re.compile(r"<search>(.*?)</search>", re.DOTALL)
-    matches = pattern.findall(text)
-    if matches:
-        return matches[-1].strip()
-    else:
-        return None
+def get_latest_query(text):
+    """提取最后一个 <search>... 中的内容，且必须完整闭合"""
+    matches = re.findall(r"<search>(.*?)</search>", text, re.DOTALL)
+    return matches[-1].strip() if matches else None
+
+
+def extract_final_answer(text):
+    """提取 <answer>...</answer> 中的内容"""
+    match = re.search(r"<answer>\s*(.*?)\s*</answer>", text, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else None
 
 
 def search(query: str):
-    """调用本地搜索引擎 API"""
     if not query or not query.strip():
         print("[WARNING] Empty query passed to search function.")
         return ""
@@ -68,7 +65,6 @@ def search(query: str):
         "topk": 3,
         "return_scores": True
     }
-
     try:
         response = requests.post(
             "http://127.0.0.1:8006/retrieve",
@@ -79,77 +75,73 @@ def search(query: str):
         response.raise_for_status()
         json_data = response.json()
         results = json_data.get('result', [])
-    except requests.exceptions.Timeout:
-        print("[ERROR] Search request timed out.")
-        return ""
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Request failed: {e}")
-        return ""
-    except ValueError as e:
-        print(f"[ERROR] Failed to decode JSON: {e}")
-        print("Response content:", response.text[:500])
+    except Exception as e:
+        print(f"[ERROR] Search failed: {e}")
         return ""
 
     if not results:
-        print("[INFO] No results returned from search.")
-        return ""
+        return "No relevant information found."
 
     def _passages2string(retrieval_result):
-        format_reference = ''
+        ref = ''
         for idx, doc_item in enumerate(retrieval_result):
             content = doc_item['document']['contents']
-            lines = content.split("\n")
+            lines = content.split("\n", 1)
             title = lines[0] if lines else ""
-            text = "\n".join(lines[1:]) if len(lines) > 1 else ""
-            format_reference += f"Doc {idx+1}(Title: {title}) {text}\n"
-        return format_reference
+            text = lines[1] if len(lines) > 1 else ""
+            ref += f"Doc {idx+1}(Title: {title}) {text}\n"
+        return ref
 
     return _passages2string(results[0])
 
 
-# 自定义停止条件：基于字符串匹配，检测是否生成了 </search>
+# 自定义停止条件：检测是否生成了 </search>
 class StopOnSearchEnd(transformers.StoppingCriteria):
-    def __init__(self, tokenizer, target_sequences):
+    def __init__(self, tokenizer):
         self.tokenizer = tokenizer
-        self.target_sequences = [t.strip() for t in target_sequences]
         self.buffer = ""
 
     def __call__(self, input_ids, scores, **kwargs):
-        # 解码最新生成的 token
-        new_token_id = input_ids[0, -1].item()
+        new_token = input_ids[0, -1].item()
         try:
-            new_text = self.tokenizer.decode([new_token_id], skip_special_tokens=True, clean_up_tokenization_spaces=True)
+            text = self.tokenizer.decode([new_token], skip_special_tokens=True, clean_up_tokenization_spaces=True)
         except:
-            new_text = ""
+            text = ""
+        self.buffer += text
 
-        self.buffer += new_text
-
-        # 检查 buffer 是否以任意目标序列结尾
-        current = self.buffer.strip()
-        for target in self.target_sequences:
-            if current.endswith(target):
-                return True
-        return False
+        # 检查是否以 </search> 结尾（允许空格或换行）
+        stripped = self.buffer.strip()
+        ends = ["</search>", " </search>", "</search>\n", " </search>\n"]
+        return any(stripped.endswith(end.strip()) for end in ends)
 
 
-# 开始推理循环
 print('\n\n################# [Start Reasoning + Searching] ##################\n\n')
 print(f'[prompt]: {prompt}')
 
 cnt = 0
+full_context = prompt  # 维护完整上下文
+
 while True:
     # 编码输入
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    inputs = tokenizer(full_context, return_tensors="pt").to(device)
     input_ids = inputs["input_ids"]
     attention_mask = inputs["attention_mask"]
 
-    # 每次生成都新建 stopping_criteria，避免 buffer 累积
-    target_endings = ["</search>", " </search>", "</search>\n", " </search>\n", "</search>\n\n"]
-    stopping_criteria = transformers.StoppingCriteriaList([
-        StopOnSearchEnd(tokenizer, target_endings)
-    ])
+    # 检查是否已经包含 <answer>，如果有，直接退出
+    final_answer = extract_final_answer(full_context)
+    if final_answer is not None:
+        print(f"\n✅ Final Answer detected: <answer> {final_answer} </answer>")
+        break
 
-    # 生成：关键点 —— 禁用 eos_token_id 停止机制
+    # 检查是否已包含 </search> 但无新内容？防止无限循环
+    if cnt >= 10:
+        print("[ERROR] Too many search iterations. Breaking loop.")
+        break
+
+    # 设置 stopping criteria
+    stopping_criteria = transformers.StoppingCriteriaList([StopOnSearchEnd(tokenizer)])
+
+    # 生成（关键：禁用 eos 停止）
     outputs = model.generate(
         input_ids=input_ids,
         attention_mask=attention_mask,
@@ -158,19 +150,28 @@ while True:
         pad_token_id=pad_token_id,
         do_sample=True,
         temperature=0.7,
-        eos_token_id=None,  # 不要因生成 EOS 而提前退出
-        top_p=0.9,
+        eos_token_id=None,  # 禁用 EOS 提前退出
     )
 
     # 解码新增内容
     generated_tokens = outputs[0][input_ids.shape[1]:]
-    output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+    new_text = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
 
-    # 获取完整上下文
-    full_response = prompt + output_text
+    if not new_text:
+        print("[WARNING] No new text generated.")
+        break
+
+    # 将新内容追加到上下文
+    full_context += new_text
 
     # 提取最新 query
-    query = get_query(full_response)
+    query = get_latest_query(full_context)
+
+    # 检查是否输出了最终答案
+    final_answer = extract_final_answer(full_context)
+    if final_answer is not None:
+        print(f"\n✅ Final Answer: <answer> {final_answer} </answer>")
+        break
 
     if query:
         print(f"[INFO] Detected search query: {query}")
@@ -178,24 +179,17 @@ while True:
         if not search_results.strip():
             search_results = "No relevant information found."
 
-        # 构造搜索结果文本
-        search_text = curr_search_template.format(output_text=output_text, search_results=search_results)
-        prompt += search_text
+        # 构造搜索返回文本
+        search_return_text = curr_search_template.format(
+            output_text=new_text,
+            search_results=search_results
+        )
+        full_context += search_return_text
         cnt += 1
-        print(f'[search_text in NO.{cnt}]: {search_text}')
+        print(f'[search_text in NO.{cnt}]: {search_return_text}')
     else:
-        # 没有触发搜索，检查是否输出了最终答案
-        if "<answer>" in output_text:
-            answer_match = re.search(r"<answer>(.*?)</answer>", output_text, re.DOTALL | re.IGNORECASE)
-            if answer_match:
-                final_answer = answer_match.group(1).strip()
-                print(f"\n✅ Final Answer: <answer> {final_answer} </answer>")
-            else:
-                print(f"\n✅ Final Output: {output_text}")
-            break
-        else:
-            # 既无搜索也无答案，可能是模型终止
-            print(f"\n⚠️ Generation ended without search or answer:\n{output_text}")
-            break
+        # 无搜索也无答案 → 可能模型结束了
+        print(f"\n⚠️ No search or answer generated. Output: {new_text}")
+        break
 
 print("\n################# [Reasoning + Searching Finished] ##################")
