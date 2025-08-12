@@ -140,13 +140,13 @@ while True:
         pad_token_id=tokenizer.eos_token_id,#for qwen2.5
         # pad_token_id=pad_token_id,
         do_sample=True,
-        temperature=0.7
+        temperature=0.3
     )
 
     if outputs[0][-1].item() in curr_eos:
         generated_tokens = outputs[0][input_ids.shape[1]:]
         output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        print(f"final result:{output_text}")
+        print(f"**final result:\n{output_text}")
         break
 
     generated_tokens = outputs[0][input_ids.shape[1]:]
@@ -154,10 +154,10 @@ while True:
     # print(f'[debug] output "{output_text}"...')
     tmp_query = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
     if tmp_query:
-        print(f'**[debug]search NO.{cnt}')
-        print(f'**[debug]start searching ""{tmp_query}"...')
+        print(f'**[debug]search time {cnt}')
+        print(f'**[debug]start searching\n "{tmp_query}"...')
         search_results = search(tmp_query)
-        print(f'**[debug]searching result :"{search_results}"')
+        print(f'**[debug]searching result :\n"{search_results}"')
     else:
         search_results = ''
 
