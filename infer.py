@@ -125,7 +125,7 @@ if tokenizer.chat_template:
     prompt = tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=False)
 
 print('\n\n################# [Start Reasoning + Searching] ##################\n\n')
-print(f'[prompt]:{prompt}')
+print(f'**[prompt]:{prompt}')
 # Encode the chat-formatted prompt and move it to the correct device
 while True:
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
@@ -146,7 +146,7 @@ while True:
     if outputs[0][-1].item() in curr_eos:
         generated_tokens = outputs[0][input_ids.shape[1]:]
         output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        print(f"output before search:{output_text}")
+        print(f"final result:{output_text}")
         break
 
     generated_tokens = outputs[0][input_ids.shape[1]:]
@@ -154,12 +154,14 @@ while True:
     # print(f'[debug] output "{output_text}"...')
     tmp_query = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
     if tmp_query:
-        # print(f'[debug] searching "{tmp_query}"...')
+        print(f'**[debug]search NO.{cnt}')
+        print(f'**[debug]start searching ""{tmp_query}"...')
         search_results = search(tmp_query)
+        print(f'**[debug]searching result :"{search_results}"')
     else:
         search_results = ''
 
     search_text = curr_search_template.format(output_text=output_text, search_results=search_results)
     prompt += search_text
     cnt += 1
-    print(f'[search_text in NO.{cnt}]:{search_text}')
+    # print(f'[search_text in NO.{cnt}]:{search_text}')
