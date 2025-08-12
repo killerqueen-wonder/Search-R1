@@ -146,7 +146,7 @@ while True:
     if outputs[0][-1].item() in curr_eos:
         generated_tokens = outputs[0][input_ids.shape[1]:]
         output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        print(output_text)
+        print(f"output before search:{output_text}")
         break
 
     generated_tokens = outputs[0][input_ids.shape[1]:]
