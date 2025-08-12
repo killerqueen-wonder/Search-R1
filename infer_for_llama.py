@@ -21,7 +21,7 @@ question = "Mike Barnett negotiated many contracts including which player that w
 question = 'who got the first nobel prize in physics?'
 # Model ID and device setup
 model_id = "/linzhihang/huaiwenpang/legal_LLM/Search-R1/Search-R1/verl_checkpoints/nq-search-r1-ppo-llama3.2-3b-em/actor/global_step_1000"
-model_id ='meta-llama/Llama-3.2-3B'
+# model_id ='meta-llama/Llama-3.2-3B'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 确保问题以问号结尾
@@ -247,10 +247,6 @@ if not final_answer:
     if answer_match:
         final_answer = answer_match.group(1).strip()
     
-    # 如果还是没有，尝试基于搜索结果推断
-    if not final_answer and "Wayne Gretzky" in last_generated:
-        final_answer = "Wayne Gretzky"
-        print("\n⚠️ No explicit <answer> tag found, but 'Wayne Gretzky' was mentioned in search results.")
 
 # 输出最终结果
 if final_answer:
