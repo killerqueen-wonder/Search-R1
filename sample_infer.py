@@ -33,7 +33,7 @@ It will return results between <information> and </information>. \
 You can search multiple times. \
 If no more knowledge is needed, provide the answer in <answer> content </answer>, e.g., <answer> Beijing </answer>. \
 Question: {question}\n"""
-prompt =question
+# prompt =question
 curr_eos = [151645, 151643] # for Qwen2.5 series models
 
 # 初始化 tokenizer 和模型
