@@ -146,6 +146,7 @@ while True:
     if outputs[0][-1].item() in curr_eos:
         generated_tokens = outputs[0][input_ids.shape[1]:]
         output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        print(f'**after search time {cnt}')
         print(f"**final result:\n{output_text}")
         break
 
@@ -154,7 +155,7 @@ while True:
     # print(f'[debug] output "{output_text}"...')
     tmp_query = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
     if tmp_query:
-        print(f'**[debug]search time {cnt}')
+        
         print(f'**[debug]start searching\n "{tmp_query}"...')
         search_results = search(tmp_query)
         print(f'**[debug]searching result :\n"{search_results}"')

@@ -1,5 +1,6 @@
 
 corpus_file=/your/corpus/jsonl/file # jsonl
+corpus_file=/your/corpus/jsonl/file # jsonl
 save_dir=/the/path/to/save/index
 retriever_name=e5 # this is for indexing naming
 retriever_model=intfloat/e5-base-v2
