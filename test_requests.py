@@ -67,6 +67,7 @@ if __name__ == "__main__":
     #   "return_scores": True
     # }
     # print(requests.post(test_url, json=payload).json())
+    print(f'正在检索{queries}')
     try:
         test_response = verify_and_call_search_service(test_url, payload)
         print("Search service is up! Sample response:", test_response)
