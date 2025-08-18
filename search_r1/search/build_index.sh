@@ -1,7 +1,7 @@
 
 corpus_file=/your/corpus/jsonl/file # jsonl
-corpus_file="/linzhihang/huaiwenpang/legal_LLM/dataset/law/law_processed.jsonl" # jsonl
-save_dir=/linzhihang/huaiwenpang/legal_LLM/dataset/law
+corpus_file="/linzhihang/huaiwenpang/legal_LLM/dataset/case/case.jsonl" # jsonl
+save_dir=/linzhihang/huaiwenpang/legal_LLM/dataset/case
 retriever_name=e5 # this is for indexing naming
 retriever_model=intfloat/e5-base-v2
 

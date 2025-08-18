@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--queries', default= 'What is Python?',type=str)
     parser.add_argument('--topk', default= 3,type=int)
-
+    parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     args = parser.parse_args()
 
     queries=args.queries
