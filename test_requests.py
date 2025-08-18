@@ -46,7 +46,7 @@ def verify_and_call_search_service(search_url: str, payload: dict, timeout: floa
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "test requests.")
 
-    parser.add_argument('--queries', default= 'What is Python?',type=str)
+    parser.add_argument('--queries', default= '抢劫罪',type=str)
     parser.add_argument('--topk', default= 3,type=int)
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     args = parser.parse_args()
