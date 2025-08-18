@@ -7,7 +7,7 @@ retriever_model=intfloat/e5-base-v2
 
 # change faiss_type to HNSW32/64/128 for ANN indexing
 # change retriever_name to bm25 for BM25 indexing
-CUDA_VISIBLE_DEVICES=0,1,2,3 python index_builder.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python search_r1/search/index_builder.py \
     --retrieval_method $retriever_name \
     --model_path $retriever_model \
     --corpus_path $corpus_file \

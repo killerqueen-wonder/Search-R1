@@ -1,7 +1,7 @@
 import requests
 import logging
 from requests.exceptions import JSONDecodeError, RequestException
-
+import argparse
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -44,19 +44,28 @@ def verify_and_call_search_service(search_url: str, payload: dict, timeout: floa
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description = "test requests.")
+
+    parser.add_argument('--queries', default= 'What is Python?',type=str)
+    parser.add_argument('--topk', default= 3,type=int)
+
+    args = parser.parse_args()
+
+    queries=args.queries
+    topk=args.topk
     # 在训练脚本最开始或验证前做一次连通性检查
     test_url = "http://127.0.0.1:8006/retrieve"
     
     payload = {
-            "queries": ["What is Python?"],
-            "topk": 1,
+            "queries": [queries],
+            "topk": topk,
             "return_scores": True
         }
-    payload =    {
-      "queries": ["What is Python?", "Tell me about neural networks."],
-      "topk": 3,
-      "return_scores": True
-    }
+    # payload =    {
+    #   "queries": ["What is Python?", "Tell me about neural networks."],
+    #   "topk": 3,
+    #   "return_scores": True
+    # }
     # print(requests.post(test_url, json=payload).json())
     try:
         test_response = verify_and_call_search_service(test_url, payload)
