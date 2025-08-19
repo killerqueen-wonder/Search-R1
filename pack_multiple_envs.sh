@@ -35,7 +35,12 @@ for env in "${ENVIRONMENTS[@]}"; do
         continue
     fi
     
-    
+    # 检查备份文件是否已存在，如果存在则跳过
+    OUTPUT_FILE="$BACKUP_DIR/${env}.tar.gz"
+    if [ -f "$OUTPUT_FILE" ]; then
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️ 备份文件已存在，跳过环境: $env ($OUTPUT_FILE)"
+        continue
+    fi
     conda pack -n "$env" -o "$BACKUP_DIR/${env}.tar.gz" --format tar.gz
     
     # 检查打包结果
