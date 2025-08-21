@@ -63,7 +63,8 @@ def read_from_jsonl(filename="D:/学习资料/DS 课程/法律大模型/data/法
 #     'A cheetah is running behind its prey.',
 #     'The quick brown fox jumps over the lazy dog.',
 # ]
-corpus=read_from_jsonl(filename="D:/学习资料/DS 课程/法律大模型/data/法律条文/law.jsonl")
+filename="/mnt/nvme1n1/legal_LLM/dataset/law/law_pure.jsonl"
+corpus=read_from_jsonl(filename)
 corpus_embeddings = embedder.encode(corpus)
 
 # Query sentences:
