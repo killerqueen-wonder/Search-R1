@@ -49,6 +49,13 @@ def read_from_jsonl(filename="D:/学习资料/DS 课程/法律大模型/data/法
     
     return data
 
+def format_time_delta(seconds):
+    """将秒数转换为小时:分钟:秒的格式"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
 
 def process_retriever(embedder,filename,queries):
     corpus=read_from_jsonl(filename)
@@ -105,9 +112,10 @@ def process_retriever(embedder,filename,queries):
 #         return [json.loads(line)['text'] for line in f]
 
 def process_retriever(embedder, filename, queries, output_path):
+    t1 = time.time()
     corpus = read_from_jsonl(filename)
     
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and False:
         # device = torch.device("cuda")
         print(f"正在使用GPU: {torch.cuda.get_device_name(0)}")
         # corpus_embeddings = embedder.encode(corpus,convert_to_tensor=True,device=device)
@@ -124,6 +132,9 @@ def process_retriever(embedder, filename, queries, output_path):
     else:
         print('[debug]GPU不可用')
         corpus_embeddings = embedder.encode(corpus)
+
+    t2 = time.time()
+    print(f"[debug]embedding运行时间: {format_time_delta(t2 - t1)}")
 
     top_k = min(5, len(corpus))
 
@@ -185,13 +196,9 @@ def process_retriever(embedder, filename, queries, output_path):
                 f.write(f"{text} (Score: {score:.4f})\n")
 
     print(f"结果已保存到 {output_path}")
+    t3 = time.time()
+    print(f"[debug]检索运行时间: {format_time_delta(t3 - t2)}")
 
-def format_time_delta(seconds):
-    """将秒数转换为小时:分钟:秒的格式"""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # 调用函数
 if __name__ == "__main__":
