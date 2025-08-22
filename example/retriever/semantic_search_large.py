@@ -15,7 +15,8 @@ sys.path.append('..')
 
 from text2vec import SentenceModel, cos_sim, semantic_search, BM25
 import torch
-
+import time
+from datetime import datetime, timedelta
 
 
 import json
@@ -105,7 +106,24 @@ def process_retriever(embedder,filename,queries):
 
 def process_retriever(embedder, filename, queries, output_path):
     corpus = read_from_jsonl(filename)
-    corpus_embeddings = embedder.encode(corpus)
+    
+    if torch.cuda.is_available():
+        # device = torch.device("cuda")
+        print(f"正在使用GPU: {torch.cuda.get_device_name(0)}")
+        # corpus_embeddings = embedder.encode(corpus,convert_to_tensor=True,device=device)
+
+        # Start the multi processes pool on all available CUDA devices
+        pool = embedder.start_multi_process_pool()
+
+        # Compute the embeddings using the multi processes pool
+        emb = embedder.encode_multi_process(corpus, pool, normalize_embeddings=True)
+        print(f"[debug]Embeddings computed. Shape: {emb.shape}")
+
+        # Optional: Stop the process in the pool
+        model.stop_multi_process_pool(pool)
+    else:
+        print('[debug]GPU不可用')
+        corpus_embeddings = embedder.encode(corpus)
 
     top_k = min(5, len(corpus))
 
@@ -168,13 +186,19 @@ def process_retriever(embedder, filename, queries, output_path):
 
     print(f"结果已保存到 {output_path}")
 
-# process_retriever(embedder,filename,queries)
+def format_time_delta(seconds):
+    """将秒数转换为小时:分钟:秒的格式"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # 调用函数
 if __name__ == "__main__":
-    
-    # embedder = SentenceModel("shibing624/text2vec-base-multilingual")
-    embedder = SentenceModel("shibing624/text2vec-base-chinese-paraphrase")
+    start_time = time.time()
+
+    model="shibing624/text2vec-base-chinese-paraphrase"
+    embedder = SentenceModel(model)
     filename="/mnt/nvme1n1/legal_LLM/dataset/law/law_pure.jsonl"
     output_path="/mnt/nvme1n1/legal_LLM/dataset/law/output_results.txt"
     # Query sentences:
@@ -195,3 +219,6 @@ if __name__ == "__main__":
         
     ]
     process_retriever(embedder, filename, queries, output_path)
+
+    end_time = time.time()
+    print(f"程序运行时间: {format_time_delta(end_time - start_time)}")
