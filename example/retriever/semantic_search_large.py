@@ -116,8 +116,8 @@ def process_retriever(embedder, filename, queries, output_path):
         pool = embedder.start_multi_process_pool()
 
         # Compute the embeddings using the multi processes pool
-        emb = embedder.encode_multi_process(corpus, pool, normalize_embeddings=True)
-        print(f"[debug]Embeddings computed. Shape: {emb.shape}")
+        corpus_embeddings = embedder.encode_multi_process(corpus, pool, normalize_embeddings=True)
+        print(f"[debug]Embeddings computed. Shape: {corpus_embeddings.shape}")
 
         # Optional: Stop the process in the pool
         model.stop_multi_process_pool(pool)
