@@ -99,9 +99,9 @@ def process_retriever(embedder,filename,queries):
             print(i[0], "(Score: {:.4f})".format(i[1]))
 
 
-def read_from_jsonl(filename):
-    with open(filename, 'r', encoding='utf-8') as f:
-        return [json.loads(line)['text'] for line in f]
+# def read_from_jsonl(filename):
+#     with open(filename, 'r', encoding='utf-8') as f:
+#         return [json.loads(line)['text'] for line in f]
 
 def process_retriever(embedder, filename, queries, output_path):
     corpus = read_from_jsonl(filename)
