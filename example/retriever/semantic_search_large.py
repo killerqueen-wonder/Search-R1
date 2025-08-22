@@ -115,7 +115,7 @@ def process_retriever(embedder, filename, queries, output_path):
     t1 = time.time()
     corpus = read_from_jsonl(filename)
     
-    if torch.cuda.is_available() and False:
+    if torch.cuda.is_available():
         # device = torch.device("cuda")
         print(f"正在使用GPU: {torch.cuda.get_device_name(0)}")
         # corpus_embeddings = embedder.encode(corpus,convert_to_tensor=True,device=device)
