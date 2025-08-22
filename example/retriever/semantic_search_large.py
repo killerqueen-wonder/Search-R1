@@ -120,7 +120,7 @@ def process_retriever(embedder, filename, queries, output_path):
         print(f"[debug]Embeddings computed. Shape: {corpus_embeddings.shape}")
 
         # Optional: Stop the process in the pool
-        model.stop_multi_process_pool(pool)
+        embedder.stop_multi_process_pool(pool)
     else:
         print('[debug]GPU不可用')
         corpus_embeddings = embedder.encode(corpus)
