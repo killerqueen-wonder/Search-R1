@@ -12,7 +12,7 @@ This script outputs for various queries the top 5 most similar sentences in the 
 import sys
 
 sys.path.append('..')
-
+import os
 from text2vec import SentenceModel, cos_sim, semantic_search, BM25
 import torch
 import time
@@ -57,66 +57,51 @@ def format_time_delta(seconds):
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
-def process_retriever(embedder,filename,queries):
-    corpus=read_from_jsonl(filename)
-    corpus_embeddings = embedder.encode(corpus)
+def get_embedding_filename(jsonl_filename):
+    """
+    根据jsonl文件名生成对应的embedding文件名
+    例如: law_pure.jsonl -> law_pure_embeddings.pt
+    """
+    base_name = os.path.splitext(os.path.basename(jsonl_filename))[0]
+    dir_name = os.path.dirname(jsonl_filename)
+    embedding_filename = os.path.join(dir_name, f"{base_name}_embeddings.pt")
+    return embedding_filename
 
+def save_corpus_embeddings(embedder, filename):
+    """
+    加载语料库并计算句子嵌入，然后保存为与语料库同名的 .pt 文件。
     
+    参数:
+        embedder: SentenceModel 实例
+        filename: 原始语料库路径 (.jsonl)
+    """
+    print(f"[INFO] 开始加载语料库: {filename}")
+    corpus = read_from_jsonl(filename)
+    
+    # 生成对应的embedding文件名
+    embedding_file = get_embedding_filename(filename)
+    
+    print("[INFO] 正在计算语义向量...")
+    if torch.cuda.is_available():
+        print(f"[INFO] 使用 GPU: {torch.cuda.get_device_name(0)}")
+        pool = embedder.start_multi_process_pool()
+        corpus_embeddings = embedder.encode_multi_process(corpus, pool, normalize_embeddings=True)
+        embedder.stop_multi_process_pool(pool)
+    else:
+        print("[INFO] 使用 CPU 计算")
+        corpus_embeddings = embedder.encode(corpus)
 
-    # Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity
-    print('\nuse cos sim calc each query and corpus:')
-    top_k = min(5, len(corpus))
-    for query in queries:
-        query_embedding = embedder.encode(query)
-
-        # We use cosine-similarity and torch.topk to find the highest 5 scores
-        cos_scores = cos_sim(query_embedding, corpus_embeddings)[0]
-        top_results = torch.topk(cos_scores, k=top_k)
-
-        print("\n======================\n")
-        print("Query:", query)
-        print("\nwith cos sim Top 5 most similar sentences in corpus:")
-
-        for score, idx in zip(top_results[0], top_results[1]):
-            print(corpus[idx], "(Score: {:.4f})".format(score))
-
-    print('#' * 42)
-    ########  use semantic_search to perform cosine similarty + topk
-    print('\nuse semantic_search to perform cosine similarty + topk:')
-
-    for query in queries:
-        query_embedding = embedder.encode(query)
-        hits = semantic_search(query_embedding, corpus_embeddings, top_k=5)
-        print("\n======================\n")
-        print("Query:", query)
-        print("\nwith semantic_search Top 5 most similar sentences in corpus:")
-        hits = hits[0]  # Get the hits for the first query
-        for hit in hits:
-            print(corpus[hit['corpus_id']], "(Score: {:.4f})".format(hit['score']))
-
-    print('#' * 42)
-    ######## use bm25 to rank search score
-    print('\nuse bm25 to calc each score:')
-
-    search_sim = BM25(corpus=corpus)
-    for query in queries:
-        print("\n======================\n")
-        print("Query:", query)
-        print("\nwith bm25 Top 5 most similar sentences in corpus:")
-        for i in search_sim.get_scores(query, top_k=5):
-            print(i[0], "(Score: {:.4f})".format(i[1]))
-
-
-# def read_from_jsonl(filename):
-#     with open(filename, 'r', encoding='utf-8') as f:
-#         return [json.loads(line)['text'] for line in f]
+    print(f"[INFO] 保存 embedding 到: {embedding_file}")
+    torch.save(corpus_embeddings, embedding_file)
+    print(f"[INFO] 已保存 shape={corpus_embeddings.shape}")
+    return embedding_file
 
 def process_retriever(embedder, filename, queries, output_path):
     t1 = time.time()
     corpus = read_from_jsonl(filename)
     
     if torch.cuda.is_available():
-        # device = torch.device("cuda")
+        device = torch.device("cuda")
         print(f"正在使用GPU: {torch.cuda.get_device_name(0)}")
         # corpus_embeddings = embedder.encode(corpus,convert_to_tensor=True,device=device)
 
@@ -199,6 +184,101 @@ def process_retriever(embedder, filename, queries, output_path):
     t3 = time.time()
     print(f"[debug]检索运行时间: {format_time_delta(t3 - t2)}")
 
+def process_retriever(
+    embedder, 
+    filename, 
+    queries=None, 
+    output_path="output_results.txt"
+):
+    """
+    处理检索任务，自动检测并使用embedding文件
+    
+    参数:
+        embedder: SentenceModel 实例
+        filename: 原始语料库路径 (.jsonl)
+        queries: 查询列表
+        output_path: 输出结果文件路径
+    """
+    t1 = time.time()
+    
+    # 生成对应的embedding文件名
+    embedding_file = get_embedding_filename(filename)
+    
+    # 检查embedding文件是否存在
+    if os.path.exists(embedding_file):
+        print(f"[INFO] 发现预计算的embedding文件: {embedding_file}")
+        print("[INFO] 从本地 embedding 文件加载...")
+        corpus_embeddings = torch.load(embedding_file)
+        corpus = read_from_jsonl(filename)
+    else:
+        print(f"[INFO] 未找到预计算的embedding文件: {embedding_file}")
+        print("[INFO] 开始计算并保存embedding...")
+        # 计算并保存embedding
+        save_corpus_embeddings(embedder, filename)
+        # 重新加载
+        corpus_embeddings = torch.load(embedding_file)
+        corpus = read_from_jsonl(filename)
+
+    t2 = time.time()
+    print(f"[DEBUG] embedding 运行时间: {format_time_delta(t2 - t1)}")
+
+    top_k = min(5, len(corpus))
+
+    # 初始化 BM25 模型
+    bm25_model = BM25(corpus=corpus)
+
+    def cos_sim_retrieval(query):
+        query_embedding = embedder.encode(query)
+        cos_scores = cos_sim(query_embedding, corpus_embeddings)[0]
+        top_results = []
+        scores_list = cos_scores.tolist()
+        indexed_scores = [(i, score) for i, score in enumerate(scores_list)]
+        indexed_scores.sort(key=lambda x: x[1], reverse=True)
+        for i in range(min(top_k, len(indexed_scores))):
+            idx, score = indexed_scores[i]
+            top_results.append((corpus[idx], score))
+        return top_results
+
+    def semantic_search_retrieval(query):
+        query_embedding = embedder.encode(query)
+        hits = semantic_search(query_embedding, corpus_embeddings, top_k=top_k)[0]
+        results = []
+        for hit in hits:
+            results.append((corpus[hit['corpus_id']], hit['score']))
+        return results
+
+    def bm25_retrieval(query):
+        bm25_scores = bm25_model.get_scores(query, top_k=top_k)
+        results = []
+        for text, score in bm25_scores:
+            results.append((text, score))
+        return results
+
+    # 重定向输出到文件
+    with open(output_path, 'w', encoding='utf-8') as f:
+        for query in queries:
+            f.write("\n" + "="*50 + "\n")
+            f.write(f"Query: {query}\n")
+            f.write("="*50 + "\n")
+
+            f.write("\n--- 使用余弦相似度 (Cosine Similarity) ---\n")
+            cos_results = cos_sim_retrieval(query)
+            for text, score in cos_results:
+                f.write(f"{text} (Score: {score:.4f})\n")
+
+            f.write("\n--- 使用 semantic_search ---\n")
+            sem_results = semantic_search_retrieval(query)
+            for text, score in sem_results:
+                f.write(f"{text} (Score: {score:.4f})\n")
+
+            f.write("\n--- 使用 BM25 ---\n")
+            bm25_results = bm25_retrieval(query)
+            for text, score in bm25_results:
+                f.write(f"{text} (Score: {score:.4f})\n")
+
+    print(f"结果已保存到 {output_path}")
+    t3 = time.time()
+    print(f"[DEBUG] 检索运行时间: {format_time_delta(t3 - t2)}")
 
 # 调用函数
 if __name__ == "__main__":
