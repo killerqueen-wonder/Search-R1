@@ -487,6 +487,7 @@ class Config:
         
         gpu_ids: List[int] = [3, 4, 5, 7],  # 新增 GPU ID 列表
         gpu_memory_limit_per_gpu =18,#新增内存限制
+        port =8006,#新增port端口号
         retrieval_model_path: str = "./model",
         retrieval_pooling_method: str = "mean",
         retrieval_query_max_length: int = 256,
@@ -501,6 +502,7 @@ class Config:
         self.data_split = data_split
         self.faiss_gpu = faiss_gpu
 
+        self.port=port
         self.gpu_ids=gpu_ids
         self.gpu_memory_limit_per_gpu=gpu_memory_limit_per_gpu
 
@@ -564,6 +566,7 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
 
+    parser.add_argument("--port", type=int, default=8006, help="the API port")
     parser.add_argument("--gpu_ids", type=int, nargs='+', default=[3, 4, 5, 7], help="GPU device IDs to use.")
     parser.add_argument("--gpu_memory_limit_per_gpu", type=int, nargs='+', default=[18], help="GPU memory limit per GPU in GB.")
 
@@ -578,6 +581,8 @@ if __name__ == "__main__":
         corpus_path=args.corpus_path,
         retrieval_topk=args.topk,
         faiss_gpu=args.faiss_gpu,
+
+        port=args.port,  
         gpu_ids=args.gpu_ids,  # 传递 GPU ID
         gpu_memory_limit_per_gpu=args.gpu_memory_limit_per_gpu,  # 传递显存限制
 
@@ -591,5 +596,5 @@ if __name__ == "__main__":
     # 2) Instantiate a global retriever so it is loaded once and reused.
     retriever = get_retriever(config)
     
-    # 3) Launch the server. By default, it listens on http://127.0.0.1:8000
-    uvicorn.run(app, host="0.0.0.0", port=8006)
+    # 3) Launch the server. By default, it listens on http://127.0.0.1:8006
+    uvicorn.run(app, host="0.0.0.0", port=config.port)
