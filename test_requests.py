@@ -47,6 +47,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "test requests.")
 
     parser.add_argument('--queries', default= '抢劫罪',type=str)
+    parser.add_argument('--test_url', default= "http://127.0.0.1:8006/retrieve",type=str)
     parser.add_argument('--topk', default= 3,type=int)
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     args = parser.parse_args()
@@ -54,7 +55,8 @@ if __name__ == "__main__":
     queries=args.queries
     topk=args.topk
     # 在训练脚本最开始或验证前做一次连通性检查
-    test_url = "http://127.0.0.1:8006/retrieve"
+    # test_url = "http://127.0.0.1:8006/retrieve"
+    test_url=args.test_url
     
     payload = {
             "queries": [queries],
