@@ -1,7 +1,7 @@
 
 file_path=/mnt/nvme1n1/legal_LLM/dataset/law
 index_file=$file_path/e5_Flat.index
-corpus_file=$file_path/law_pure.jsonl
+corpus_file=$file_path/law_processed.jsonl
 retriever_name=text2vec
 retriever_path=shibing624/text2vec-base-chinese-paraphrase
 
