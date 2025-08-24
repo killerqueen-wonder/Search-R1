@@ -96,99 +96,12 @@ def save_corpus_embeddings(embedder, filename):
     print(f"[INFO] 已保存 shape={corpus_embeddings.shape}")
     return embedding_file
 
-def process_retriever(embedder, filename, queries, output_path):
-    t1 = time.time()
-    corpus = read_from_jsonl(filename)
-    
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        print(f"正在使用GPU: {torch.cuda.get_device_name(0)}")
-        # corpus_embeddings = embedder.encode(corpus,convert_to_tensor=True,device=device)
-
-        # Start the multi processes pool on all available CUDA devices
-        pool = embedder.start_multi_process_pool()
-
-        # Compute the embeddings using the multi processes pool
-        corpus_embeddings = embedder.encode_multi_process(corpus, pool, normalize_embeddings=True)
-        print(f"[debug]Embeddings computed. Shape: {corpus_embeddings.shape}")
-
-        # Optional: Stop the process in the pool
-        embedder.stop_multi_process_pool(pool)
-    else:
-        print('[debug]GPU不可用')
-        corpus_embeddings = embedder.encode(corpus)
-
-    t2 = time.time()
-    print(f"[debug]embedding运行时间: {format_time_delta(t2 - t1)}")
-
-    top_k = min(5, len(corpus))
-
-    # 初始化 BM25 模型
-    bm25_model = BM25(corpus=corpus)
-
-    def cos_sim_retrieval(query):
-        query_embedding = embedder.encode(query)
-        cos_scores = cos_sim(query_embedding, corpus_embeddings)[0]
-        # 获取topk的索引和分数
-        top_results = []
-        scores_list = cos_scores.tolist()
-        indexed_scores = [(i, score) for i, score in enumerate(scores_list)]
-        indexed_scores.sort(key=lambda x: x[1], reverse=True)
-        for i in range(min(top_k, len(indexed_scores))):
-            idx, score = indexed_scores[i]
-            top_results.append((corpus[idx], score))
-        return top_results
-
-    def semantic_search_retrieval(query):
-        query_embedding = embedder.encode(query)
-        hits = semantic_search(query_embedding, corpus_embeddings, top_k=top_k)[0]
-        results = []
-        for hit in hits:
-            results.append((corpus[hit['corpus_id']], hit['score']))
-        return results
-
-    def bm25_retrieval(query):
-        # BM25.get_scores 返回的是排序后的结果
-        bm25_scores = bm25_model.get_scores(query, top_k=top_k)
-        results = []
-        for text, score in bm25_scores:
-            results.append((text, score))
-        return results
-
-    # 重定向输出到文件
-    with open(output_path, 'w', encoding='utf-8') as f:
-        for query in queries:
-            f.write("\n" + "="*50 + "\n")
-            f.write(f"Query: {query}\n")
-            f.write("="*50 + "\n")
-
-            # 方法A：余弦相似度
-            f.write("\n--- 使用余弦相似度 (Cosine Similarity) ---\n")
-            cos_results = cos_sim_retrieval(query)
-            for text, score in cos_results:
-                f.write(f"{text} (Score: {score:.4f})\n")
-
-            # 方法B：semantic_search
-            f.write("\n--- 使用 semantic_search ---\n")
-            sem_results = semantic_search_retrieval(query)
-            for text, score in sem_results:
-                f.write(f"{text} (Score: {score:.4f})\n")
-
-            # 方法C：BM25
-            f.write("\n--- 使用 BM25 ---\n")
-            bm25_results = bm25_retrieval(query)
-            for text, score in bm25_results:
-                f.write(f"{text} (Score: {score:.4f})\n")
-
-    print(f"结果已保存到 {output_path}")
-    t3 = time.time()
-    print(f"[debug]检索运行时间: {format_time_delta(t3 - t2)}")
 
 def process_retriever(
-    embedder, 
-    filename, 
-    queries=None, 
-    output_path="output_results.txt"
+    queries=None,
+    output_path="output_results.txt", 
+    filename="/mnt/nvme1n1/legal_LLM/dataset/law/law_pure.jsonl", 
+    embedder=SentenceModel("shibing624/text2vec-base-chinese-paraphrase")
 ):
     """
     处理检索任务，自动检测并使用embedding文件
@@ -305,7 +218,7 @@ if __name__ == "__main__":
     　　承运人承认货物已经遗失，或者货物在应当到达之日起七日后仍未到达的，收货人有权向承运人行使航空货物运输合同所赋予的权利。''',
         
     ]
-    process_retriever(embedder, filename, queries, output_path)
+    process_retriever(queries,output_path, filename, embedder )
 
     end_time = time.time()
     print(f"程序运行时间: {format_time_delta(end_time - start_time)}")

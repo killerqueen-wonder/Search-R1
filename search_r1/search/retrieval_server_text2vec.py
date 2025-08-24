@@ -15,6 +15,15 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+import sys
+import os
+from text2vec import SentenceModel, semantic_search
+import torch
+import time
+import json
+
+
+
 def load_corpus(corpus_path: str):
     corpus = datasets.load_dataset(
         'json', 
@@ -293,14 +302,169 @@ class DenseRetriever(BaseRetriever):
         else:
             return results
 
+class Text2vecRetriever(BaseRetriever):
+    def __init__(self, config):
+        super().__init__(config)
+        
+        # 初始化 text2vec 模型
+        self.embedder = SentenceModel(config.retrieval_model_path)
+        
+        # 加载语料库
+        self.corpus = load_corpus(self.corpus_path)
+        
+        # 生成对应的embedding文件名
+        self.embedding_file = self._get_embedding_filename(self.corpus_path)
+        
+        # 加载或计算语料库嵌入
+        self.corpus_embeddings = self._load_or_compute_embeddings()
+        
+        self.topk = config.retrieval_topk
+        self.batch_size = config.retrieval_batch_size
+
+    def _get_embedding_filename(self, jsonl_filename):
+        """
+        根据jsonl文件名生成对应的embedding文件名
+        """
+        base_name = os.path.splitext(os.path.basename(jsonl_filename))[0]
+        dir_name = os.path.dirname(jsonl_filename)
+        embedding_filename = os.path.join(dir_name, f"{base_name}_embeddings.pt")
+        return embedding_filename
+
+    def _load_or_compute_embeddings(self):
+        """
+        加载预计算的嵌入向量，如果不存在则计算并保存
+        """
+        print(f"[INFO] 检查预计算的embedding文件: {self.embedding_file}")
+        
+        if os.path.exists(self.embedding_file):
+            print(f"[INFO] 发现预计算的embedding文件，正在加载...")
+            corpus_embeddings = torch.load(self.embedding_file)
+            print(f"[INFO] 已加载 embedding shape={corpus_embeddings.shape}")
+        else:
+            print(f"[INFO] 未找到预计算的embedding文件，开始计算...")
+            corpus_embeddings = self._compute_and_save_embeddings()
+            
+        return corpus_embeddings
+
+    def _compute_and_save_embeddings(self):
+        """
+        计算语料库嵌入向量并保存
+        """
+        # 提取语料库文本内容
+        corpus_texts = []
+        for doc in self.corpus:
+            if 'contents' in doc:
+                corpus_texts.append(doc['contents'])
+            elif 'text' in doc:
+                corpus_texts.append(doc['text'])
+            else:
+                corpus_texts.append(str(doc))
+        
+        print(f"[INFO] 正在计算 {len(corpus_texts)} 个文档的语义向量...")
+        start_time = time.time()
+        
+        # 计算嵌入向量
+        if torch.cuda.is_available():
+            print(f"[INFO] 使用 GPU: {torch.cuda.get_device_name(0)}")
+            pool = self.embedder.start_multi_process_pool()
+            corpus_embeddings = self.embedder.encode_multi_process(corpus_texts, pool, normalize_embeddings=True)
+            self.embedder.stop_multi_process_pool(pool)
+        else:
+            print("[INFO] 使用 CPU 计算")
+            corpus_embeddings = self.embedder.encode(corpus_texts, normalize_embeddings=True)
+        
+        # 保存嵌入向量
+        print(f"[INFO] 保存 embedding 到: {self.embedding_file}")
+        torch.save(corpus_embeddings, self.embedding_file)
+        print(f"[INFO] 已保存 shape={corpus_embeddings.shape}")
+        
+        end_time = time.time()
+        print(f"[DEBUG] embedding 计算时间: {end_time - start_time:.2f} 秒")
+        
+        return corpus_embeddings
+
+    def _search(self, query: str, num: int = None, return_score: bool = False):
+        if num is None:
+            num = self.topk
+            
+        start_time = time.time()
+        
+        # 计算查询嵌入向量
+        query_embedding = self.embedder.encode(query, normalize_embeddings=True)
+        
+        # 使用 semantic_search 进行检索
+        hits = semantic_search(query_embedding, self.corpus_embeddings, top_k=num)[0]
+        
+        end_time = time.time()
+        print(f"[DEBUG] 单次检索时间: {end_time - start_time:.4f} 秒")
+        
+        # 构建结果
+        results = []
+        scores = []
+        
+        for hit in hits:
+            doc_idx = hit['corpus_id']
+            score = hit['score']
+            
+            # 获取对应文档
+            doc = self.corpus[doc_idx]
+            results.append(doc)
+            scores.append(score)
+        
+        if return_score:
+            return results, scores
+        else:
+            return results
+
+    def _batch_search(self, query_list: List[str], num: int = None, return_score: bool = False):
+        if isinstance(query_list, str):
+            query_list = [query_list]
+        if num is None:
+            num = self.topk
+            
+        start_time = time.time()
+        
+        # 计算所有查询的嵌入向量
+        query_embeddings = self.embedder.encode(query_list, normalize_embeddings=True)
+        
+        # 批量检索
+        batch_results = []
+        batch_scores = []
+        
+        for i, query_embedding in enumerate(query_embeddings):
+            # 为每个查询单独进行检索（因为 semantic_search 需要单个查询向量）
+            hits = semantic_search(query_embedding, self.corpus_embeddings, top_k=num)[0]
+            
+            results = []
+            scores = []
+            
+            for hit in hits:
+                doc_idx = hit['corpus_id']
+                score = hit['score']
+                
+                doc = self.corpus[doc_idx]
+                results.append(doc)
+                scores.append(score)
+            
+            batch_results.append(results)
+            batch_scores.append(scores)
+        
+        end_time = time.time()
+        print(f"[DEBUG] 批量检索时间 ({len(query_list)} 个查询): {end_time - start_time:.4f} 秒")
+        
+        if return_score:
+            return batch_results, batch_scores
+        else:
+            return batch_results
+
+
 def get_retriever(config):
     if config.retrieval_method == "bm25":
         return BM25Retriever(config)
-    # elif config.retrieval_method == "text2vec":
-    #     return Text2vecRetriever(config)
+    elif config.retrieval_method == "text2vec":
+        return Text2vecRetriever(config)
     else:
         return DenseRetriever(config)
-
 
 #####################################
 # FastAPI server below
@@ -396,7 +560,7 @@ if __name__ == "__main__":
     parser.add_argument("--index_path", type=str, default="/home/peterjin/mnt/index/wiki-18/e5_Flat.index", help="Corpus indexing file.")
     parser.add_argument("--corpus_path", type=str, default="/home/peterjin/mnt/data/retrieval-corpus/wiki-18.jsonl", help="Local corpus file.")
     parser.add_argument("--topk", type=int, default=3, help="Number of retrieved passages for one query.")
-    parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
+    parser.add_argument("--retriever_name", type=str, default="text2vec", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
 
