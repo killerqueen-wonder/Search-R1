@@ -1,7 +1,7 @@
 #!/bin/bash
 # 批量恢复Conda环境的脚本
 
-BACKUP_DIR="${1:-/linzhihang/huaiwenpang/legal_LLM/env_backup}"
+BACKUP_DIR="${1:-/caizhenyang/panghuaiwen/legal_LLM/env_backup}"
 RESTORE_DIR="${2:-/root/miniconda3/envs}"
 shift 2
 ENVIRONMENTS=("$@")
