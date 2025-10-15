@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export CUDA_VISIBLE_DEVICES=0,1,2,3
-export DATA_DIR='/caizhenyang/panghuaiwen/legal_LLM/dataset/数据集/legal_exam'
+export DATA_DIR='/caizhenyang/panghuaiwen/legal_LLM/dataset/dataset/legal_exam'
 
 WAND_PROJECT='Search-R1'
 
