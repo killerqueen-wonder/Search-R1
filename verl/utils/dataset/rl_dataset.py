@@ -17,7 +17,7 @@ import os
 from typing import List, Union
 
 import pandas as pd
-
+import json
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -100,6 +100,20 @@ class RLHFDataset(Dataset):
             dataframe = pd.read_parquet(parquet_file)
             dataframes.append(dataframe)
         self.dataframe = pd.concat(dataframes)
+        
+
+        def _fix_chat(v):#兼容类型
+            if isinstance(v, str):
+                try:
+                    return json.loads(v)
+                except Exception:
+                    return v
+            if isinstance(v, dict):
+                return [v]  # 转为 list[dict]
+            return v
+
+        self.dataframe[self.prompt_key] = self.dataframe[self.prompt_key].apply(_fix_chat)
+
 
         print(f'original dataset len: {len(self.dataframe)}')
 
