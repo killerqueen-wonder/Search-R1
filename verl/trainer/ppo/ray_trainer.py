@@ -415,7 +415,11 @@ class RayPPOTrainer(object):
 
         print(f'Size of train dataloader: {len(self.train_dataloader)}')
         print(f'Size of val dataloader: {len(self.val_dataloader)}')
-        
+
+        print("[debug]val_dataset_len:", len(self.val_dataset))
+        print("[debug]val_batch_size:", self.config.data.val_batch_size)
+        print('[debug]val_dataset.dataframe:',len(self.val_dataset.dataframe))
+
         assert len(self.train_dataloader) >= 1
         assert len(self.val_dataloader) >= 1
 
