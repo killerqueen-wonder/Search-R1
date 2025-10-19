@@ -23,7 +23,7 @@ import re
 import numpy as np
 from datetime import datetime
 def _select_rm_score_fn(data_source):
-    if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle']:
+    if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle','legal_exam']:
         return qa_em.compute_score_em
     else:
         raise NotImplementedError
