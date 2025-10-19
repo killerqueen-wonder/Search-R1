@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .base import BaseRollout, get_rollout_class
-from .hf_rollout import HFRollout
+from .base import BaseRollout
 from .naive import NaiveRollout
+from .hf_rollout import HFRollout
 
-__all__ = ["BaseRollout", "NaiveRollout", "HFRollout", "get_rollout_class"]
+__all__ = ["BaseRollout", "NaiveRollout", "HFRollout"]
